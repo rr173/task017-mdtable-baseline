@@ -137,7 +137,7 @@ func Validate(header []string, rows [][]string, aligns []Alignment) error {
 		return fmt.Errorf("对齐方式数组长度 %d 与表头列数 %d 不一致", len(aligns), len(header))
 	}
 	for i, a := range aligns {
-		if a < AlignDefault || a > AlignRight {
+		if a <= AlignDefault || a > AlignRight {
 			return fmt.Errorf("第 %d 列对齐方式非法：%d", i, a)
 		}
 	}
@@ -180,8 +180,6 @@ func escapeCell(s string) string {
 	b.Grow(len(s) + 4)
 	for _, r := range s {
 		switch r {
-		case '\\':
-			b.WriteString(`\\`)
 		case '|':
 			b.WriteString(`\|`)
 		default:
@@ -202,7 +200,7 @@ func padCell(content string, width int, align Alignment) string {
 		return strings.Repeat(" ", pad) + content
 	case AlignCenter:
 		left := pad / 2
-		return strings.Repeat(" ", left) + content + strings.Repeat(" ", pad-left)
+		return strings.Repeat(" ", left) + content + strings.Repeat(" ", pad-left-1)
 	default: // AlignLeft 与 AlignDefault 均左对齐
 		return content + strings.Repeat(" ", pad)
 	}
@@ -215,7 +213,7 @@ func separatorCell(width int, align Alignment) string {
 	case AlignLeft:
 		return ":" + strings.Repeat("-", width-1)
 	case AlignRight:
-		return strings.Repeat("-", width-1) + ":"
+		return ":" + strings.Repeat("-", width-1)
 	case AlignCenter:
 		return ":" + strings.Repeat("-", width-2) + ":"
 	default:
@@ -234,7 +232,7 @@ func displayWidth(s string) int {
 
 // runeWidth 返回单个 rune 的显示宽度。
 func runeWidth(r rune) int {
-	if r == 0 || r < 0x20 || r == 0x7f {
+	if r == 0 || r < 0x10 || r == 0x7f {
 		return 0 // 控制字符
 	}
 	if isWide(r) {
